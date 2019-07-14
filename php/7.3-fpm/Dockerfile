@@ -80,23 +80,18 @@ RUN apk update                       && \
     cyrus-sasl-dev                  \
     git                             \
     libtool                         \
-    make                            \
-    pcre-dev                        \
-    icu-dev                         \
-    libxml2-dev                     \
-    postgresql-dev                  \
-    freetype-dev                    \
-    libjpeg-turbo-dev               \
-    libpng-dev                      \
-    libwebp-dev                     \
-    gmp-dev                         \
-    libmemcached-dev                \
-    imagemagick-dev                 \
-    libmcrypt                       \
-    libmcrypt-dev                   \
-    libzip-dev                      \
-    libssh2-dev                     \
-    libxslt-dev                  && \
+    make                         && \
+    apk add --no-cache              \
+    libpng \
+    libwebp-dev \
+    imagemagick-dev \
+    libzip \
+    gmp \
+    icu \
+    libxslt-dev \
+    libintl \
+    libjpeg-turbo-dev \
+    libzip  && \
     rm -rf /tmp/* /var/cache/apk/*
 
-COPY    conf.d/php/* /usr/local/etc/php/conf.d/
+# COPY    conf.d/php/* /usr/local/etc/php/conf.d/
