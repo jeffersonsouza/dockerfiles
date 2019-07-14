@@ -99,4 +99,4 @@ RUN apk update                       && \
     libxslt-dev                  && \
     rm -rf /tmp/* /var/cache/apk/*
 
-COPY    conf.d/php/* /usr/local/etc/php/conf.d/
+# COPY    conf.d/php/* /usr/local/etc/php/conf.d/
