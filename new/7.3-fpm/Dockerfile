@@ -1,6 +1,6 @@
-FROM alpine:3.10 as php
+FROM jeffersonsouza/nginx:alpine as php
 
-LABEL	maintainer="Jefferson Souza"
+LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 
 RUN apk update                       && \
     apk upgrade                      && \
@@ -8,32 +8,25 @@ RUN apk update                       && \
     php7 \
     php7-common \
     php7-fpm \
-    php7-sodium
+    php7-sodium \
+    php7-intl                                                \
+    php7-bcmath                                              \
+    php7-pdo                                                 \
+    php7-pdo_mysql                                           \
+    php7-redis                                               \
+    php7-gd
 
-FROM php as nginx
+COPY config/fpm /etc/php/fpm
 
-RUN apk update                       && \
-    apk upgrade                      && \
-    apk add --no-cache                  \
-    nginx \
-    nginx-mod-http-geoip \
-    nginx-mod-http-cache-purge \
-    nginx-mod-http-headers-more \
-    nginx-mod-http-upload-progress
-
-COPY supervisor/conf/nginx/* /etc/nginx/
-
-FROM nginx as supervisor
+FROM php as supervisor
 
 RUN apk update                       && \
     apk upgrade                      && \
     apk add --no-cache                  \
     supervisor \
-    rm -rf /tmp/* /var/cache/apk/* && \
-    mkdir -p /tmp/nginx && \
-    chown nginx /tmp/nginx
+    rm -rf /tmp/* /var/cache/apk/*
 
-COPY supervisor/conf/supervisor/* /etc/supervisor/
+COPY config/supervisor /etc/supervisor
 
 FROM supervisor
 
@@ -41,4 +34,4 @@ EXPOSE 80 443
 
 STOPSIGNAL SIGTERM
 
-ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisor.conf"]
+ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisor/supervisor.conf"]
