@@ -11,6 +11,7 @@ RUN apk update                       && \
     php7-sodium \
     php7-intl                                                \
     php7-bcmath                                              \
+    php7-mysqli                                                 \
     php7-pdo                                                 \
     php7-pdo_mysql                                           \
     php7-redis                                               \
@@ -27,7 +28,7 @@ RUN apk update                       && \
     rm -rf /tmp/* /var/cache/apk/* && \
     mv /var/www/html/index.html /var/www/html/index.php && \
     echo '<?php phpinfo(); ?>' >> /var/www/html/index.php && \
-    sed 's/#include/include/g' /etc/nginx/conf.d/default.conf
+    sed -i 's/#include/include/g' /etc/nginx/conf.d/default.conf
 
 COPY config/supervisor /etc/supervisor
 
