@@ -27,6 +27,7 @@ RUN apk update && \
     php8-dom \
     php8-xml \
     php8-simplexml \
+    php8-xmlwriter \
     php8-mbstring \
     php8-curl \
     php8-ctype \
