@@ -34,6 +34,7 @@ RUN apk update && \
     php8-pecl-imagick \
     php8-pecl-redis \
     php8-zlib \
+    php8-fileinfo \
     php8-opcache && \
     ln -s /usr/sbin/php-fpm7 /usr/local/bin/php && \
     mkdir /run/php/ && chown -R nginx.www-data /run/php/
