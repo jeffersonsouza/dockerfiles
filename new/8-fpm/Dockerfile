@@ -2,7 +2,7 @@ FROM jeffersonsouza/nginx:alpine as php
 
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 
-ADD https://dl.bintray.com/php-alpine/key/php-alpine.rsa.pub /etc/apk/keys/php-alpine.rsa.pub
+# ADD https://dl.bintray.com/php-alpine/key/php-alpine.rsa.pub /etc/apk/keys/php-alpine.rsa.pub
 
 # https://github.com/Hermsi1337/docker-fpm-php/blob/master/conf.d/
 # https://github.com/codecasts/php-alpine
@@ -34,8 +34,10 @@ RUN apk update && \
     php8-pecl-imagick \
     php8-pecl-redis \
     php8-zlib \
+    php8-tokenizer \
     php8-fileinfo \
     php8-opcache && \
+    rm -rf /tmp/* /var/cache/apk/* && \
     ln -s /usr/sbin/php-fpm7 /usr/local/bin/php && \
     mkdir /run/php/ && chown -R nginx.www-data /run/php/
 
@@ -47,7 +49,7 @@ RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
     supervisor \
-    curl \
+    curl && \
     rm -rf /tmp/* /var/cache/apk/* && \
     mv /var/www/html/index.html /var/www/html/index.php && \
     echo '<?php phpinfo(); ?>' >> /var/www/html/index.php && \
