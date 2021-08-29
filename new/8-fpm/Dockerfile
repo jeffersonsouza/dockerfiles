@@ -53,7 +53,7 @@ RUN apk update && \
     rm -rf /tmp/* /var/cache/apk/* && \
     mv /var/www/html/index.html /var/www/html/index.php && \
     echo '<?php phpinfo(); ?>' >> /var/www/html/index.php && \
-    sed -i 's/#include/include/g' /etc/nginx/conf.d/default.conf
+    sed -i 's/#include/include/g' /etc/nginx/http.d/default.conf
 
 COPY config/supervisor /etc/supervisor
 
