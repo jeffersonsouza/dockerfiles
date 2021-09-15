@@ -10,6 +10,7 @@ RUN adduser -D -H -u 1000 -s /bin/bash www-data -G www-data \
     nginx-mod-http-cache-purge \
     nginx-mod-http-headers-more \
     nginx-mod-http-upload-progress \
+    nginx-mod-http-brotli \
     && mkdir -p /var/www \
     && chown -R www-data:www-data /var/www \
     && mkdir -p /var/cache/nginx \

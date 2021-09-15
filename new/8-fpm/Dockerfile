@@ -36,6 +36,7 @@ RUN apk update && \
     php8-zlib \
     php8-tokenizer \
     php8-fileinfo \
+    php8-brotli \
     php8-opcache && \
     rm -rf /tmp/* /var/cache/apk/* && \
     ln -s /usr/sbin/php-fpm7 /usr/local/bin/php && \
