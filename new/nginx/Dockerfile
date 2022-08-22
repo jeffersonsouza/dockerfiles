@@ -1,4 +1,4 @@
-FROM alpine:3.14 as nginx
+FROM alpine:3.16 as nginx
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 
 RUN adduser -D -H -u 1000 -s /bin/bash www-data -G www-data \
@@ -15,7 +15,7 @@ RUN adduser -D -H -u 1000 -s /bin/bash www-data -G www-data \
     && chown -R www-data:www-data /var/www \
     && mkdir -p /var/cache/nginx \
     && mkdir -p /var/tmp/nginx \
-    && chown -R www-data:www-data /var/cache/nginx \
+    && chown -R www-data:www-data /var/cwache/nginx \
     && chown -R www-data:www-data /var/lib/nginx \
     && chown -R www-data:www-data /var/tmp/nginx \
     && rm -rf /tmp/* /var/cache/apk/*
