@@ -1,5 +1,6 @@
 FROM alpine:3.16 as nginx
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
+LABEL name="jeffersonsouza/nginx"
 
 RUN adduser -D -H -u 1000 -s /bin/bash www-data -G www-data \
     && apk update \

@@ -1,11 +1,8 @@
 FROM jeffersonsouza/nginx:alpine as php
 
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
+LABEL name="jeffersonsouza/php"
 
-# ADD https://dl.bintray.com/php-alpine/key/php-alpine.rsa.pub /etc/apk/keys/php-alpine.rsa.pub
-
-# https://github.com/Hermsi1337/docker-fpm-php/blob/master/conf.d/
-# https://github.com/codecasts/php-alpine
 RUN apk --update add ca-certificates
 
 RUN apk update && \
