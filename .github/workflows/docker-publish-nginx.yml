@@ -55,5 +55,5 @@ jobs:
         with:
           context: ./new/nginx/
           push: ${{ github.event_name != 'pull_request' }}
-          tags: alpine
+          tags: ${{ env.IMAGE_NAME }}:alpine
           labels: ${{ steps.meta.outputs.labels }}
