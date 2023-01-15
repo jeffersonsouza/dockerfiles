@@ -1,4 +1,4 @@
-FROM alpine:3.16 as nginx
+FROM alpine:edge as nginx
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 LABEL name="jeffersonsouza/nginx"
 
