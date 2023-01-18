@@ -39,7 +39,7 @@ RUN apk update && \
     ln -s /usr/sbin/php-fpm7 /usr/local/bin/php && \
     mkdir /run/php/ && chown -R nginx.www-data /run/php/
 
-COPY config/fpm/php-fpm.conf /etc/php8/php-fpm.d/custom.conf
+COPY config/fpm/php-fpm.conf /etc/php82/php-fpm.d/custom.conf
 
 FROM php as supervisor
 
