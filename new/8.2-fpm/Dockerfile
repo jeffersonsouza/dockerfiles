@@ -33,6 +33,9 @@ RUN apk update && \
     php82-zlib \
     php82-tokenizer \
     php82-fileinfo \
+    php82-pdo_sqlite \
+    php82-iconv \
+    php82-phar \
     # php82-brotli \
     php82-opcache && \
     rm -rf /tmp/* /var/cache/apk/* && \
