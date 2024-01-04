@@ -8,36 +8,36 @@ RUN apk --update add ca-certificates
 RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
-    php82 \
-    php82-common \
-    php82-fpm \
-    php82-sodium \
-    php82-intl \
-    php82-bcmath \
-    php82-mysqli \
-    php82-pdo \
-    php82-pdo_mysql \
-    php82-redis \
-    php82-gd \
-    php82-json \
-    php82-zip \
-    php82-dom \
-    php82-xml \
-    php82-simplexml \
-    php82-xmlwriter \
-    php82-mbstring \
-    php82-curl \
-    php82-ctype \
+    php83 \
+    php83-common \
+    php83-fpm \
+    php83-sodium \
+    php83-intl \
+    php83-bcmath \
+    php83-mysqli \
+    php83-pdo \
+    php83-pdo_mysql \
+    php83-redis \
+    php83-gd \
+    php83-json \
+    php83-zip \
+    php83-dom \
+    php83-xml \
+    php83-simplexml \
+    php83-xmlwriter \
+    php83-mbstring \
+    php83-curl \
+    php83-ctype \
     # php82-pecl-imagick \
-    php82-pecl-redis \
-    php82-zlib \
-    php82-tokenizer \
-    php82-fileinfo \
-    php82-pdo_sqlite \
-    php82-iconv \
-    php82-phar \
+    php83-pecl-redis \
+    php83-zlib \
+    php83-tokenizer \
+    php83-fileinfo \
+    php83-pdo_sqlite \
+    php83-iconv \
+    php83-phar \
     # php82-brotli \
-    php82-opcache && \
+    php83-opcache && \
     rm -rf /tmp/* /var/cache/apk/* && \
     mkdir /run/php/ && chown -R nginx.www-data /run/php/
 
@@ -54,6 +54,7 @@ RUN apk update && \
     mv /var/www/html/index.html /var/www/html/index.php && \
     echo '<?php phpinfo(); ?>' >> /var/www/html/index.php && \
     sed -i 's/#include/include/g' /etc/nginx/http.d/default.conf && \
+    ln -s /usr/bin/php83 /usr/bin/php && \
     php -v
 
 COPY config/supervisor /etc/supervisor
