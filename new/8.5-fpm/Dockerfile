@@ -8,40 +8,40 @@ RUN apk --update add ca-certificates
 RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
-    php82 \
-    php82-common \
-    php82-fpm \
-    php82-sodium \
-    php82-intl \
-    php82-bcmath \
-    php82-mysqli \
-    php82-pdo \
-    php82-pdo_mysql \
-    php82-redis \
-    php82-gd \
-    php82-json \
-    php82-zip \
-    php82-dom \
-    php82-xml \
-    php82-simplexml \
-    php82-xmlwriter \
-    php82-mbstring \
-    php82-curl \
-    php82-ctype \
+    php85 \
+    php85-common \
+    php85-fpm \
+    php85-sodium \
+    php85-intl \
+    php85-bcmath \
+    php85-mysqli \
+    php85-pdo \
+    php85-pdo_mysql \
+    php85-redis \
+    php85-gd \
+    php85-json \
+    php85-zip \
+    php85-dom \
+    php85-xml \
+    php85-simplexml \
+    php85-xmlwriter \
+    php85-mbstring \
+    php85-curl \
+    php85-ctype \
     # php82-pecl-imagick \
-    php82-pecl-redis \
-    php82-zlib \
-    php82-tokenizer \
-    php82-fileinfo \
-    php82-pdo_sqlite \
-    php82-iconv \
-    php82-phar \
-    # php82-brotli \
-    php82-opcache && \
-    rm -rf /tmp/* /var/cache/apk/* && \
-    mkdir /run/php/ && chown -R nginx.www-data /run/php/
+    php85-pecl-redis \
+    php85-zlib \
+    php85-tokenizer \
+    php85-fileinfo \
+    php85-pdo_sqlite \
+    php85-iconv \
+    php85-phar \
+    php85-pecl-brotli \
+#    php85-opcache \
+    && rm -rf /tmp/* /var/cache/apk/* \
+    && mkdir /run/php/ && chown -R www-data:www-data /run/php/
 
-COPY config/fpm/php-fpm.conf /etc/php82/php-fpm.d/custom.conf
+COPY config/fpm/php-fpm.conf /etc/php85/php-fpm.d/custom.conf
 
 FROM php as supervisor
 
@@ -54,7 +54,7 @@ RUN apk update && \
     mv /var/www/html/index.html /var/www/html/index.php && \
     echo '<?php phpinfo(); ?>' >> /var/www/html/index.php && \
     sed -i 's/#include/include/g' /etc/nginx/http.d/default.conf && \
-    ln -s /usr/bin/php83 /usr/bin/php && \
+    ln -s /usr/bin/php85 /usr/bin/php && \
     php -v
 
 COPY config/supervisor /etc/supervisor

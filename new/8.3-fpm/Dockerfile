@@ -28,7 +28,7 @@ RUN apk update && \
     php83-mbstring \
     php83-curl \
     php83-ctype \
-    # php82-pecl-imagick \
+    php83-pecl-imagick \
     php83-pecl-redis \
     php83-zlib \
     php83-tokenizer \
@@ -36,12 +36,12 @@ RUN apk update && \
     php83-pdo_sqlite \
     php83-iconv \
     php83-phar \
-    # php82-brotli \
+    php83-pecl-brotli \
     php83-opcache && \
     rm -rf /tmp/* /var/cache/apk/* && \
-    mkdir /run/php/ && chown -R nginx.www-data /run/php/
+    mkdir /run/php/ && chown -R www-data:www-data /run/php/
 
-COPY config/fpm/php-fpm.conf /etc/php82/php-fpm.d/custom.conf
+COPY config/fpm/php-fpm.conf /etc/php83/php-fpm.d/custom.conf
 
 FROM php as supervisor
 
@@ -54,7 +54,7 @@ RUN apk update && \
     mv /var/www/html/index.html /var/www/html/index.php && \
     echo '<?php phpinfo(); ?>' >> /var/www/html/index.php && \
     sed -i 's/#include/include/g' /etc/nginx/http.d/default.conf && \
-    ln -s /usr/bin/php83 /usr/bin/php && \
+    # ln -s /usr/bin/php83 /usr/bin/php && \
     php -v
 
 COPY config/supervisor /etc/supervisor
