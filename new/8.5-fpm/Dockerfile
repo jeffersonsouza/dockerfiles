@@ -1,4 +1,4 @@
-FROM jeffersonsouza/nginx:alpine as php
+FROM jeffersonsouza/nginx:alpine-3.23 as php
 
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 LABEL name="jeffersonsouza/php"
@@ -28,7 +28,7 @@ RUN apk update && \
     php85-mbstring \
     php85-curl \
     php85-ctype \
-    # php82-pecl-imagick \
+    php85-ftp \
     php85-pecl-redis \
     php85-zlib \
     php85-tokenizer \

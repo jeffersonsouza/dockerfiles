@@ -1,4 +1,4 @@
-FROM jeffersonsouza/nginx:alpine as php
+FROM jeffersonsouza/nginx:alpine-3.22 as php
 
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 LABEL name="jeffersonsouza/php"
