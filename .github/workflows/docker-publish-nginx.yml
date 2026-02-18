@@ -62,6 +62,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./new/nginx/
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           build-args: |
             BASE_TAG=${{ matrix.alpine_version }}

@@ -54,6 +54,7 @@ jobs:
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
           context: ./new/8.2-fpm/
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ env.IMAGE_NAME }}:8.2-nginx
           labels: ${{ steps.meta.outputs.labels }}
