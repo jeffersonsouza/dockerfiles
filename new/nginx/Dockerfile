@@ -1,4 +1,6 @@
-FROM alpine:edge as nginx
+ARG BASE_TAG=edge
+
+FROM alpine:${BASE_TAG} as nginx
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 LABEL name="jeffersonsouza/nginx"
 
