@@ -25,7 +25,7 @@ jobs:
     strategy:
       # This creates 4 parallel runs
       matrix:
-        alpine_version: [ "3.16", "3.19", "3.23" ]
+        alpine_version: [ "3.16", "3.19", "3.22", "3.23" ]
 
     permissions:
       contents: read
