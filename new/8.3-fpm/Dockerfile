@@ -54,7 +54,7 @@ RUN apk update && \
     mv /var/www/html/index.html /var/www/html/index.php && \
     echo '<?php phpinfo(); ?>' >> /var/www/html/index.php && \
     sed -i 's/#include/include/g' /etc/nginx/http.d/default.conf && \
-    # ln -s /usr/bin/php83 /usr/bin/php && \
+    ln -s /usr/bin/php83 /usr/bin/php && \
     php -v
 
 COPY config/supervisor /etc/supervisor
