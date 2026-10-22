@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-22",
+  "architecture": "ARM64",
+  "profiles": [
+    {
+      "php_version": "8.2.35",
+      "memory_mib": 256,
+      "workers": 1,
+      "index_rps": 1914.9,
+      "index_p99_ms": 55,
+      "memory_peak_mib": 149.5
+    },
+    {
+      "php_version": "8.2.35",
+      "memory_mib": 512,
+      "workers": 2,
+      "index_rps": 1842.75,
+      "index_p99_ms": 82,
+      "memory_peak_mib": 246.5
+    },
+    {
+      "php_version": "8.3.36",
+      "memory_mib": 256,
+      "workers": 1,
+      "index_rps": 1763.68,
+      "index_p99_ms": 58,
+      "memory_peak_mib": 148.9
+    },
+    {
+      "php_version": "8.3.36",
+      "memory_mib": 512,
+      "workers": 2,
+      "index_rps": 2230.49,
+      "index_p99_ms": 65,
+      "memory_peak_mib": 243.8
+    },
+    {
+      "php_version": "8.4.27",
+      "memory_mib": 256,
+      "workers": 1,
+      "index_rps": 2014.36,
+      "index_p99_ms": 54,
+      "memory_peak_mib": 150.2
+    },
+    {
+      "php_version": "8.4.27",
+      "memory_mib": 512,
+      "workers": 2,
+      "index_rps": 2085.39,
+      "index_p99_ms": 67,
+      "memory_peak_mib": 243.9
+    },
+    {
+      "php_version": "8.5.12",
+      "memory_mib": 256,
+      "workers": 1,
+      "index_rps": 2031.14,
+      "index_p99_ms": 52,
+      "memory_peak_mib": 149.7
+    },
+    {
+      "php_version": "8.5.12",
+      "memory_mib": 512,
+      "workers": 2,
+      "index_rps": 2221.74,
+      "index_p99_ms": 63,
+      "memory_peak_mib": 245.3
+    }
+  ]
+}

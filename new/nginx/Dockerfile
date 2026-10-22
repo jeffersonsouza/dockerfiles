@@ -1,6 +1,6 @@
 ARG BASE_TAG=edge
 
-FROM alpine:${BASE_TAG} as nginx
+FROM alpine:${BASE_TAG} AS nginx
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 LABEL name="jeffersonsouza/nginx"
 
@@ -27,10 +27,12 @@ COPY config /etc/nginx
 COPY index.html /var/www/html/index.html
 ADD https://raw.githubusercontent.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker/master/conf.d/globalblacklist.conf /etc/nginx/security/lists/globalblacklist.conf
 
+RUN nginx -t
+
 WORKDIR /var/www/html
 
 EXPOSE 80 443
 
-STOPSIGNAL SIGTERM
+STOPSIGNAL SIGQUIT
 
 CMD ["nginx", "-g", "daemon off;"]
