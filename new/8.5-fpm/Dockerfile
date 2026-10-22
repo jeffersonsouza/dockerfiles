@@ -1,71 +1,49 @@
-FROM jeffersonsouza/nginx:alpine-3.23 as php
+FROM php:8.5.12-fpm-alpine3.23 AS php-runtime
+
+COPY --from=ghcr.io/mlocati/php-extension-installer:2@sha256:ac4b252c153a9f6de5578ff2c417790aba836bb49855543144606033eceda253 /usr/bin/install-php-extensions /usr/local/bin/
+
+RUN apk upgrade --no-cache && \
+    install-php-extensions bcmath gd intl mysqli pdo_mysql redis zip opcache brotli ftp && \
+    rm /usr/local/bin/install-php-extensions && \
+    cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+FROM jeffersonsouza/nginx:alpine-3.23
 
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 LABEL name="jeffersonsouza/php"
+ENV PHP_INI_DIR=/usr/local/etc/php \
+    PHP_FPM_MAX_CHILDREN=1
 
-RUN apk --update add ca-certificates
+COPY --from=php-runtime /usr/local/ /usr/local/
+COPY --from=php-runtime /etc/apk/world /tmp/php-runtime-dependencies
 
-RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache \
-    php85 \
-    php85-common \
-    php85-fpm \
-    php85-sodium \
-    php85-intl \
-    php85-bcmath \
-    php85-mysqli \
-    php85-pdo \
-    php85-pdo_mysql \
-    php85-redis \
-    php85-gd \
-    php85-json \
-    php85-zip \
-    php85-dom \
-    php85-xml \
-    php85-simplexml \
-    php85-xmlwriter \
-    php85-mbstring \
-    php85-curl \
-    php85-ctype \
-    php85-ftp \
-    php85-pecl-redis \
-    php85-zlib \
-    php85-tokenizer \
-    php85-fileinfo \
-    php85-pdo_sqlite \
-    php85-iconv \
-    php85-phar \
-    php85-pecl-brotli \
-#    php85-opcache \
-    && rm -rf /tmp/* /var/cache/apk/* \
-    && mkdir /run/php/ && chown -R www-data:www-data /run/php/
+# Add PHP runtime libraries without replacing the customized Nginx installation.
+RUN test "$(cut -d . -f 1,2 /etc/alpine-release)" = 3.23 && \
+    sha256sum /usr/sbin/nginx /usr/lib/nginx/modules/*.so > /tmp/nginx-checksums && \
+    xargs apk add --no-cache --upgrade supervisor < /tmp/php-runtime-dependencies && \
+    sha256sum -c /tmp/nginx-checksums && \
+    rm /tmp/php-runtime-dependencies /tmp/nginx-checksums && \
+    mkdir -p /usr/share/nginx/fastcgi_cache && \
+    chown www-data:www-data /usr/share/nginx/fastcgi_cache
 
-COPY config/fpm/php-fpm.conf /etc/php85/php-fpm.d/custom.conf
+COPY 8.5-fpm/config/fpm/php-fpm.conf /usr/local/etc/php-fpm.d/zz-custom.conf
+COPY 8.5-fpm/config/php.ini /usr/local/etc/php/conf.d/zz-custom.ini
+COPY 8.5-fpm/config/supervisor /etc/supervisor
+COPY php/ /var/www/html/
+COPY nginx/config/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/config/http.d/default.conf nginx/config/http.d/php-fpm.conf nginx/config/http.d/cache_config.conf /etc/nginx/http.d/
 
-FROM php as supervisor
+# hadolint ignore=SC2016
+RUN sed -i 's|#include /etc/nginx/http.d/php-fpm.conf;|include /etc/nginx/http.d/php-fpm.conf;|' /etc/nginx/http.d/default.conf && \
+    sed -i 's/worker_processes[[:space:]]*auto;/worker_processes 1;/' /etc/nginx/nginx.conf && \
+    php -r 'if (PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 5 || version_compare(PHP_VERSION, "8.5.12", "<")) { fwrite(STDERR, "Unexpected or vulnerable PHP version: " . PHP_VERSION . PHP_EOL); exit(1); }' && \
+    php-fpm --test && \
+    nginx -t
 
-RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache \
-    supervisor \
-    curl && \
-    rm -rf /tmp/* /var/cache/apk/* && \
-    mv /var/www/html/index.html /var/www/html/index.php && \
-    echo '<?php phpinfo(); ?>' >> /var/www/html/index.php && \
-    sed -i 's/#include/include/g' /etc/nginx/http.d/default.conf && \
-    ln -s /usr/bin/php85 /usr/bin/php && \
-    php -v
-
-COPY config/supervisor /etc/supervisor
-
-FROM supervisor
+WORKDIR /var/www/html
 
 EXPOSE 80 443
-
 STOPSIGNAL SIGTERM
-
-ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisor/supervisor.conf"]
-
-# Configure a healthcheck to validate that everything is up&running
-HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1/fpm-ping
+ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisor.conf"]
+CMD []
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["curl", "--silent", "--show-error", "--fail", "--max-time", "4", "http://127.0.0.1/fpm-ping"]
