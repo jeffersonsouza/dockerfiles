@@ -13,6 +13,20 @@ case "$series" in
   *) echo "Unsupported PHP series: $series" >&2; exit 1 ;;
 esac
 
+if [ "$series" = 8.2 ]; then
+  docker run --rm --entrypoint sh "$image" -ec '! apk info --exists php82'
+else
+  docker run --rm --entrypoint sh "$image" -ec '
+    apk info --exists "php$1" "php$1-fpm"
+    test "$(cut -d . -f 1,2 /etc/alpine-release)" = 3.24
+    test "$(readlink -f /usr/local/bin/php)" = "/usr/bin/php$1"
+    test "$(readlink -f /usr/local/sbin/php-fpm)" = "/usr/sbin/php-fpm$1"
+    test "$(readlink -f /usr/local/etc/php)" = "/etc/php$1"
+    test "$(readlink -f /usr/local/etc/php-fpm.d)" = "/etc/php$1/php-fpm.d"
+    test "$(readlink -f /usr/local/etc/php-fpm.conf)" = "/etc/php$1/php-fpm.conf"
+  ' -- "${series//./}"
+fi
+
 docker run --rm --entrypoint php "$image" -r '
     if (PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION !== $argv[1]
         || version_compare(PHP_VERSION, $argv[2], "<")) {
@@ -21,7 +35,7 @@ docker run --rm --entrypoint php "$image" -r '
     }
     $extensions = ["bcmath", "ctype", "curl", "dom", "fileinfo", "gd", "iconv",
         "intl", "json", "mbstring", "mysqli", "openssl", "PDO", "pdo_mysql",
-        "pdo_sqlite", "Phar", "redis", "session", "SimpleXML", "sodium",
+        "pdo_sqlite", "Phar", "posix", "redis", "session", "SimpleXML", "sodium", "sqlite3", "xmlreader",
         "tokenizer", "xml", "xmlwriter", "zip", "zlib", "Zend OPcache"];
     if (in_array($argv[1], ["8.3", "8.4"], true)) { $extensions[] = "imagick"; }
     if ($argv[1] !== "8.2") { $extensions[] = "brotli"; }

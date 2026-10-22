@@ -1,3 +1,5 @@
+ARG NGINX_IMAGE=jeffersonsouza/nginx:alpine-3.23
+
 FROM php:8.2.35-fpm-alpine3.23 AS php-runtime
 
 COPY --from=ghcr.io/mlocati/php-extension-installer:2@sha256:ac4b252c153a9f6de5578ff2c417790aba836bb49855543144606033eceda253 /usr/bin/install-php-extensions /usr/local/bin/
@@ -7,7 +9,7 @@ RUN apk upgrade --no-cache && \
     rm /usr/local/bin/install-php-extensions && \
     cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-FROM jeffersonsouza/nginx:alpine-3.23
+FROM ${NGINX_IMAGE} AS runtime
 
 LABEL maintainer="Jefferson Souza<hsinfo@gmail.com>"
 LABEL name="jeffersonsouza/php"

@@ -40,11 +40,23 @@ env:
   PUBLISH: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) && (github.event_name != 'workflow_dispatch' || inputs.publish) }}
   PHP_SERIES: "8.3"
   DOCKERFILE: new/8.3-fpm/Dockerfile
+  ALPINE_VERSION: "3.24"
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    name: Build and test (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
 
     steps:
       - name: Checkout repository
@@ -52,26 +64,51 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
-        with:
-          platforms: arm64
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Build and smoke test both architectures
+      - name: Build customized Nginx base from this revision
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ./new/nginx
+          platforms: ${{ matrix.platform }}
+          build-args: BASE_TAG=${{ env.ALPINE_VERSION }}
+          pull: true
+          no-cache: true
+          provenance: false
+          outputs: type=oci,dest=${{ runner.temp }}/nginx-base.tar
+
+      - name: Prepare local Nginx image context
+        id: nginx-context
         shell: bash
         run: |
-          for platform in linux/amd64 linux/arm64; do
-            docker buildx build --pull --no-cache \
-              --platform "$platform" \
-              --file "$DOCKERFILE" \
-              --tag "php-smoke:$PHP_SERIES" \
-              --load ./new
-            bash .github/scripts/smoke-test-php.sh "php-smoke:$PHP_SERIES" "$PHP_SERIES" 256m 1
-            bash .github/scripts/smoke-test-php.sh "php-smoke:$PHP_SERIES" "$PHP_SERIES" 512m 2
-          done
+          mkdir -p "$RUNNER_TEMP/nginx-base"
+          tar -xf "$RUNNER_TEMP/nginx-base.tar" -C "$RUNNER_TEMP/nginx-base"
+          digest=$(jq -r '.manifests[0].digest' "$RUNNER_TEMP/nginx-base/index.json")
+          echo "context=oci-layout://$RUNNER_TEMP/nginx-base@$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Build PHP image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ./new
+          file: ${{ env.DOCKERFILE }}
+          platforms: ${{ matrix.platform }}
+          build-args: NGINX_IMAGE=nginx-base
+          build-contexts: nginx-base=${{ steps.nginx-context.outputs.context }}
+          load: true
+          pull: true
+          provenance: false
+          no-cache: true
+          tags: php-smoke:${{ env.PHP_SERIES }}-${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Smoke and security tests
+        shell: bash
+        run: |
+          bash .github/scripts/smoke-test-php.sh "php-smoke:$PHP_SERIES-${{ matrix.arch }}" "$PHP_SERIES" 256m 1
+          bash .github/scripts/smoke-test-php.sh "php-smoke:$PHP_SERIES-${{ matrix.arch }}" "$PHP_SERIES" 512m 2
 
       - name: Log into Docker Hub
         if: env.PUBLISH == 'true'
@@ -81,22 +118,78 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=8.3-nginx
-
-      - name: Build and push Docker image
+      - name: Push tested platform image by digest
         if: env.PUBLISH == 'true'
+        id: push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ./new
           file: ${{ env.DOCKERFILE }}
-          platforms: linux/amd64,linux/arm64
-          pull: true
-          push: ${{ env.PUBLISH == 'true' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ matrix.platform }}
+          build-args: NGINX_IMAGE=nginx-base
+          build-contexts: nginx-base=${{ steps.nginx-context.outputs.context }}
+          provenance: false
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+
+      - name: Verify published configuration and export digest
+        if: env.PUBLISH == 'true'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        shell: bash
+        run: |
+          docker image save --output "$RUNNER_TEMP/tested.tar" "php-smoke:$PHP_SERIES-${{ matrix.arch }}"
+          config=$(tar -xOf "$RUNNER_TEMP/tested.tar" manifest.json | jq -r '.[0].Config')
+          expected="sha256:$(tar -xOf "$RUNNER_TEMP/tested.tar" "$config" | sha256sum | cut -d ' ' -f 1)"
+          actual=$(docker buildx imagetools inspect --raw "$REGISTRY/$IMAGE_NAME@$DIGEST" | jq -r '.config.digest')
+          test "$actual" = "$expected"
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+
+      - name: Upload tested image digest
+        if: env.PUBLISH == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: php-${{ env.PHP_SERIES }}-digest-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish tested multi-platform tag
+    needs: build
+    if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) && (github.event_name != 'workflow_dispatch' || inputs.publish) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Download tested image digests
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: php-${{ env.PHP_SERIES }}-digest-*
+          path: ${{ runner.temp }}/digests
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log into Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Create tag from both tested digests
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/digests"
+          refs=()
+          for digest in *; do
+            [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+            refs+=("$REGISTRY/$IMAGE_NAME@sha256:$digest")
+          done
+          test "${#refs[@]}" -eq 2
+          docker buildx imagetools create --tag "$REGISTRY/$IMAGE_NAME:$PHP_SERIES-nginx" "${refs[@]}"

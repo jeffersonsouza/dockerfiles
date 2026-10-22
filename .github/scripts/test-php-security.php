@@ -64,7 +64,8 @@ switch ($_GET['mode'] ?? '') {
         break;
     case 'session':
         session_start();
-        echo session_id();
+        $_SESSION['visits'] = ($_SESSION['visits'] ?? 0) + 1;
+        echo json_encode(['id' => session_id(), 'visits' => $_SESSION['visits']]);
         break;
     case 'error':
         ini_set('display_errors', '1');
@@ -149,7 +150,12 @@ $brotli = request('/compression.txt', ['Accept-Encoding: br']);
 check(($brotli['headers']['content-encoding'] ?? '') === 'br' && strlen($brotli['body']) < strlen($static), 'Brotli compression failed');
 
 $session = request('/security-fixture.php?mode=session', ['Cookie: PHPSESSID=attacker-chosen-session']);
-check($session['body'] !== 'attacker-chosen-session' && str_contains(strtolower($session['headers']['set-cookie'] ?? ''), 'httponly'), 'Session fixation or HttpOnly protection failed');
+$sessionData = json_decode($session['body'], true, 512, JSON_THROW_ON_ERROR);
+check($session['status'] === 200 && $sessionData['id'] !== '' && $sessionData['id'] !== 'attacker-chosen-session'
+    && $sessionData['visits'] === 1 && str_contains(strtolower($session['headers']['set-cookie'] ?? ''), 'httponly'), 'Session creation, fixation or HttpOnly protection failed');
+$continued = request('/security-fixture.php?mode=session', ['Cookie: PHPSESSID=' . $sessionData['id']]);
+$continuedData = json_decode($continued['body'], true, 512, JSON_THROW_ON_ERROR);
+check($continued['status'] === 200 && $continuedData['id'] === $sessionData['id'] && $continuedData['visits'] === 2, 'Session data did not persist between requests');
 check(request('/security-fixture.php?mode=error')['body'] === 'warning logged', 'PHP displayed an error in the HTTP response');
 check(request('/security-fixture.php?mode=slow')['body'] === 'slow request completed', 'Slow request failed without tracing privileges');
 
