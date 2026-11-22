@@ -9,7 +9,8 @@ case "$series" in
   8.2) minimum=8.2.35 ;;
   8.3) minimum=8.3.36 ;;
   8.4) minimum=8.4.27 ;;
-  8.5) minimum=8.5.12 ;;
+  8.5) minimum=8.5.13 ;;
+  8.6) minimum=8.6.0 ;;
   *) echo "Unsupported PHP series: $series" >&2; exit 1 ;;
 esac
 
@@ -18,7 +19,11 @@ if [ "$series" = 8.2 ]; then
 else
   docker run --rm --entrypoint sh "$image" -ec '
     apk info --exists "php$1" "php$1-fpm"
-    test "$(cut -d . -f 1,2 /etc/alpine-release)" = 3.24
+    if [ "$1" = 86 ]; then
+      grep -Eq "^https?://[^[:space:]]+/edge/main/?$" /etc/apk/repositories
+    else
+      test "$(cut -d . -f 1,2 /etc/alpine-release)" = 3.24
+    fi
     test "$(readlink -f /usr/local/bin/php)" = "/usr/bin/php$1"
     test "$(readlink -f /usr/local/sbin/php-fpm)" = "/usr/sbin/php-fpm$1"
     test "$(readlink -f /usr/local/etc/php)" = "/etc/php$1"
@@ -39,7 +44,7 @@ docker run --rm --entrypoint php "$image" -r '
         "tokenizer", "xml", "xmlwriter", "zip", "zlib", "Zend OPcache"];
     if (in_array($argv[1], ["8.3", "8.4"], true)) { $extensions[] = "imagick"; }
     if ($argv[1] !== "8.2") { $extensions[] = "brotli"; }
-    if ($argv[1] === "8.5") { $extensions[] = "ftp"; }
+    if (in_array($argv[1], ["8.5", "8.6"], true)) { $extensions[] = "ftp"; }
     foreach ($extensions as $extension) {
         if (!extension_loaded($extension)) {
             fwrite(STDERR, "Missing extension: " . $extension . PHP_EOL);

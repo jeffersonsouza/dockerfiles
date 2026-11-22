@@ -10,7 +10,7 @@ ENV PHP_INI_DIR=/usr/local/etc/php \
 RUN test "$(cut -d . -f 1,2 /etc/alpine-release)" = 3.24 && \
     sha256sum /usr/sbin/nginx /usr/lib/nginx/modules/*.so > /tmp/nginx-checksums && \
     apk add --no-cache --upgrade ca-certificates curl supervisor \
-        "php85>=8.5.12" \
+        "php85>=8.5.13" \
         php85-fpm \
         php85-bcmath \
         php85-ctype \
@@ -61,7 +61,7 @@ COPY nginx/config/http.d/default.conf nginx/config/http.d/php-fpm.conf nginx/con
 # hadolint ignore=SC2016
 RUN sed -i 's|#include /etc/nginx/http.d/php-fpm.conf;|include /etc/nginx/http.d/php-fpm.conf;|' /etc/nginx/http.d/default.conf && \
     sed -i 's/worker_processes[[:space:]]*auto;/worker_processes 1;/' /etc/nginx/nginx.conf && \
-    php -r 'if (PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 5 || version_compare(PHP_VERSION, "8.5.12", "<")) { fwrite(STDERR, "Unexpected or vulnerable PHP version: " . PHP_VERSION . PHP_EOL); exit(1); }' && \
+    php -r 'if (PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 5 || version_compare(PHP_VERSION, "8.5.13", "<")) { fwrite(STDERR, "Unexpected or vulnerable PHP version: " . PHP_VERSION . PHP_EOL); exit(1); }' && \
     php-fpm --test && \
     nginx -t
 

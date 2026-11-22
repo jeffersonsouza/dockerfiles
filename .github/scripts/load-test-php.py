@@ -27,7 +27,7 @@ def metric(output, name, default=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("image")
-    parser.add_argument("series", choices=["8.2", "8.3", "8.4", "8.5"])
+    parser.add_argument("series", choices=["8.2", "8.3", "8.4", "8.5", "8.6"])
     parser.add_argument("--memory", type=int, choices=[256, 512], default=256, help="MiB")
     parser.add_argument("--children", type=int, choices=[1, 2], default=1)
     parser.add_argument("--seconds", type=int, default=10, help="duration of each of five stages")

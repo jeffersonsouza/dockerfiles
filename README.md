@@ -2,6 +2,12 @@
 
 Imagens Nginx e PHP-FPM publicadas em `jeffersonsouza/nginx` e `jeffersonsouza/php`.
 
+## PHP 8.6 e atualização do PHP 8.5 — 22/11/2026
+
+O build da série 8.5 exige agora PHP **8.5.13 ou superior**, incluindo a [atualização de segurança oficial](https://www.php.net/releases/8_5_13.php). A nova série 8.6 exige PHP **8.6.0 ou superior**, usa pacotes `php86-*` para o runtime e as extensões e carrega suas próprias configurações em `new/8.6-fpm/`. As tags de destino são `jeffersonsouza/php:8.5-nginx` e `jeffersonsouza/php:8.6-nginx`; a publicação depende do sucesso dos workflows.
+
+O [PHP 8.6 ainda pertence ao repositório Alpine edge/testing](https://pkgs.alpinelinux.org/package/edge/testing/x86_64/php86). Por isso, essa série usa a base personalizada `jeffersonsouza/nginx:alpine-edge`, com Nginx e módulos da mesma branch edge, e habilita `testing` com a tag `@testing` apenas para PHP e suas dependências. Não misture esses APKs com Alpine estável. Essa base acompanha uma distribuição de desenvolvimento; migre para uma versão estável quando todos os pacotes estiverem disponíveis nela. PHP 8.5 continua no Alpine 3.24.
+
 ## Atualização de segurança de 21/10/2026
 
 | Série | PHP na imagem | Tag publicada |
@@ -13,20 +19,21 @@ Imagens Nginx e PHP-FPM publicadas em `jeffersonsouza/nginx` e `jeffersonsouza/p
 
 Esses releases corrigem **CVE-2026-109618 e CVE-2026-109619**, conforme o [aviso oficial do PHP](https://www.php.net/archive/2026.php#2026-10-21-5).
 
-## Instalação por APK — 22/10/2026
+## Instalação por APK
 
 | Série | Base Nginx personalizada | Origem do PHP e extensões |
 | --- | --- | --- |
 | 8.2 | Alpine 3.23 | Runtime oficial `php:8.2.35-fpm-alpine3.23`; extensões adicionais compiladas e bibliotecas nativas via APK |
 | 8.3 | Alpine 3.24 | Pacotes `php83-*` do Alpine, com mínimo 8.3.36 |
 | 8.4 | Alpine 3.24 | Pacotes `php84-*` do Alpine, com mínimo 8.4.27 |
-| 8.5 | Alpine 3.24 | Pacotes `php85-*` do Alpine, com mínimo 8.5.12 |
+| 8.5 | Alpine 3.24 | Pacotes `php85-*` do Alpine, com mínimo 8.5.13 |
+| 8.6 | Alpine edge | Pacotes `php86-*` de `edge/testing`, com mínimo 8.6.0 |
 
 PHP 8.3–8.5 voltaram a usar pacotes prontos: seus Dockerfiles não executam `install-php-extensions`. Os índices oficiais Alpine 3.24 consultados em 22/10/2026 ofereciam os três patches corrigidos e Redis/Brotli/Imagick correspondentes em AMD64 e ARM64. Os módulos padrão `posix`, `sqlite3` e `xmlreader` também são mantidos por APK. A imagem Nginx continua sendo a personalizada deste repositório, com seus módulos, regras de bots e arquivos. O build compara os hashes do binário Nginx e de todos os módulos antes e depois de instalar PHP, falhando se algum deles for substituído.
 
 O PHP 8.2 ainda não está no Alpine 3.24, e o pacote da 3.22 continua em 8.2.33. Ele usa o núcleo já compilado da imagem oficial; não recompilamos o núcleo PHP. Apenas as extensões adicionais são compiladas para esse runtime. Bibliotecas nativas, como ICU, libzip e OpenSSL, são instaladas por APK. Misturar extensões PHP 8.2.33 da distribuição com o núcleo 8.2.35 não garante a mesma versão de código nem compatibilidade de compilação; não fazemos essa combinação. O instalador de extensões permanece fixado por digest.
 
-Os pacotes PHP pertencem ao repositório `community`, cujo suporte regular dura até a próxima versão estável do Alpine. Acompanhe a [política de suporte](https://alpinelinux.org/releases/) e atualize a base personalizada junto com a versão Alpine; `apk upgrade` em uma base antiga não assegura PHP atualizado.
+No Alpine estável, os pacotes PHP pertencem ao repositório `community`, cujo suporte regular dura até a próxima versão estável do Alpine. Acompanhe a [política de suporte](https://alpinelinux.org/releases/) e atualize a base personalizada junto com a versão Alpine; `apk upgrade` em uma base antiga não assegura PHP atualizado.
 
 Todos os builds e testes conferem a série e a versão mínima corrigida. Para atualizações futuras, altere o mínimo no Dockerfile e em `.github/scripts/smoke-test-php.sh`; no 8.2, atualize também a tag oficial do runtime.
 
@@ -34,21 +41,21 @@ Todos os builds e testes conferem a série e a versão mínima corrigida. Para a
 
 Todos os workflows têm `workflow_dispatch`. Após incorporar os arquivos na branch padrão, abra **Actions → workflow → Run workflow**. [O GitHub exige o workflow na branch padrão para habilitar esse evento](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch).
 
-Nos sete workflows de imagens, a opção `publish` permite testar sem publicar. A publicação exige `publish=true` e execução em `master` ou em uma tag `v*.*.*`. PRs e `develop` apenas validam e não sobrescrevem as tags estáveis. Os secrets continuam sendo `DOCKER_USER` e `DOCKER_PASSWORD`.
+Nos oito workflows de imagens, a opção `publish` permite testar sem publicar. A publicação exige `publish=true` e execução em `master` ou em uma tag `v*.*.*`. PRs e `develop` apenas validam e não sobrescrevem as tags estáveis. Os secrets continuam sendo `DOCKER_USER` e `DOCKER_PASSWORD`.
 
-Para reconstruir e publicar as quatro séries com GitHub CLI:
+Para reconstruir e publicar as cinco séries com GitHub CLI:
 
 ```sh
-for version in 82 83 84 85; do
+for version in 82 83 84 85 86; do
   gh workflow run "docker-publish-php${version}.yml" --ref master -f publish=true
 done
 ```
 
-O workflow **NGINX** agora também publica `jeffersonsouza/nginx:alpine-3.24`. Os workflows PHP constroem a base Nginx a partir do mesmo commit e a passam por um contexto OCI local; assim a validação da PR não depende de a nova tag já existir no Docker Hub nem da ordem das publicações. Fora do CI, os Dockerfiles usam as tags publicadas por padrão ou aceitam `--build-arg NGINX_IMAGE=...` para uma base local personalizada.
+O workflow **NGINX** também publica `jeffersonsouza/nginx:alpine-3.24` e `jeffersonsouza/nginx:alpine-edge`. Os workflows PHP constroem a base Nginx a partir do mesmo commit e a passam por um contexto OCI local; assim a validação da PR não depende de a nova tag já existir no Docker Hub nem da ordem das publicações. Fora do CI, os Dockerfiles usam as tags publicadas por padrão ou aceitam `--build-arg NGINX_IMAGE=...` para uma base local personalizada.
 
-As pipelines PHP 8.2–8.5 usam dois jobs paralelos em runners nativos: `ubuntu-24.04` para AMD64 e `ubuntu-24.04-arm` para ARM64. Não usam QEMU. Cada arquitetura passa pelos testes de 256 e 512 MiB antes de enviar uma imagem sem tag estável ao registry. A configuração publicada é comparada à imagem testada; a tag multi-arquitetura só é criada após o sucesso dos dois jobs, usando seus digests.
+As pipelines PHP 8.2–8.6 usam dois jobs paralelos em runners nativos: `ubuntu-24.04` para AMD64 e `ubuntu-24.04-arm` para ARM64. Não usam QEMU. Cada arquitetura passa pelos testes de 256 e 512 MiB antes de enviar uma imagem sem tag estável ao registry. A configuração publicada é comparada à imagem testada; a tag multi-arquitetura só é criada após o sucesso dos dois jobs, usando seus digests.
 
-PHP 8.3–8.5 instalam APKs sem cache em cada execução, buscando os pacotes atuais. PHP 8.2 mantém cache BuildKit/GitHub Actions das extensões, separado por arquitetura, mas reconstrói o estágio final `runtime` e atualiza suas dependências APK em toda execução. Mudanças na imagem oficial, no instalador ou na lista de extensões invalidam a camada de compilação. A primeira execução ainda compila essas extensões, em hardware nativo; as seguintes podem reutilizá-las. Os testes cobrem versão, origem APK, extensões, caminhos compatíveis, configurações, Nginx → FPM, página inicial sem `phpinfo()`, respostas privadas, cookies, autenticação e desligamento do contêiner.
+PHP 8.3–8.6 instalam APKs sem cache em cada execução, buscando os pacotes atuais. PHP 8.2 mantém cache BuildKit/GitHub Actions das extensões, separado por arquitetura, mas reconstrói o estágio final `runtime` e atualiza suas dependências APK em toda execução. Mudanças na imagem oficial, no instalador ou na lista de extensões invalidam a camada de compilação. A primeira execução ainda compila essas extensões, em hardware nativo; as seguintes podem reutilizá-las. Os testes cobrem versão, origem APK, extensões, caminhos compatíveis, configurações, Nginx → FPM, página inicial sem `phpinfo()`, respostas privadas, cookies, autenticação e desligamento do contêiner.
 
 Os filtros de caminhos evitam builds sem alterações relevantes. As actions são fixadas por SHA e as permissões dos builds se limitam à leitura do repositório.
 
@@ -66,23 +73,23 @@ docker build --no-cache --build-arg NGINX_IMAGE=nginx-local:3.24 \
 bash .github/scripts/smoke-test-php.sh php-local:8.5 8.5
 ```
 
-Esses comandos usam o builder Docker local. Troque a série no caminho, na tag e no teste para validar 8.3 ou 8.4. Para 8.2, use a base Nginx 3.23 e `--no-cache-filter runtime` no build PHP para preservar a compilação das extensões. Builders isolados `docker-container` precisam do contexto OCI usado nos workflows, pois não enxergam as tags locais do daemon. Para testar outra arquitetura, acrescente `--platform linux/amd64` ou `--platform linux/arm64` aos dois builds; prefira executar na arquitetura nativa.
+Esses comandos usam o builder Docker local. Troque a série no caminho, na tag e no teste para validar 8.3 ou 8.4. Para 8.6, use `BASE_TAG=edge`, `nginx-local:edge`, o Dockerfile `new/8.6-fpm/Dockerfile` e a série `8.6` no teste. Para 8.2, use a base Nginx 3.23 e `--no-cache-filter runtime` no build PHP para preservar a compilação das extensões. Builders isolados `docker-container` precisam do contexto OCI usado nos workflows, pois não enxergam as tags locais do daemon. Para testar outra arquitetura, acrescente `--platform linux/amd64` ou `--platform linux/arm64` aos dois builds; prefira executar na arquitetura nativa.
 
 ## Compatibilidade e implantação
 
-- A raiz `/` das imagens PHP 8.2–8.5 executa a página de boas-vindas compartilhada de `new/php/`, com imagem local, dados do ambiente e horário gerado pelo PHP em cada requisição. Ela verifica FPM e extensões essenciais, devolve HTTP 200 quando as verificações passam ou 503 quando falham, e usa `Cache-Control: no-store`. Clientes que enviam `Accept: application/json` recebem o diagnóstico em JSON.
+- A raiz `/` das imagens PHP 8.2–8.6 executa a página de boas-vindas compartilhada de `new/php/`, com imagem local, dados do ambiente e horário gerado pelo PHP em cada requisição. Ela verifica FPM e extensões essenciais, devolve HTTP 200 quando as verificações passam ou 503 quando falham, e usa `Cache-Control: no-store`. Clientes que enviam `Accept: application/json` recebem o diagnóstico em JSON.
 - A página HTML inclui seções recolhíveis em inglês com configurações PHP ativas, orientações básicas e uma referência histórica do teste de carga em `new/php/benchmark.json`. Esses resultados não são um teste ao vivo; a resposta JSON continua restrita ao diagnóstico dinâmico.
 - O diagnóstico informa versão PHP, SAPI, família do sistema, arquitetura, timezone e nomes das extensões carregadas. Não exibe hostname, IPs, caminhos, credenciais, variáveis de ambiente, cookies, cabeçalhos de requisição nem `phpinfo()`. Versão e módulos continuam sendo informações públicas; substitua o index pelo da aplicação ou restrinja o diagnóstico quando esses metadados não devam ser publicados.
 - As tags, o diretório `/var/www/html` e o UID 1000 de `www-data` são preservados.
 - Os caminhos comuns `/usr/local/bin/php`, `/usr/local/sbin/php-fpm`, `/usr/local/etc/php/conf.d/` e `/usr/local/etc/php-fpm.d/` são preservados. No 8.2, pertencem ao runtime oficial. Nas imagens APK, são links para os binários e configurações nativos, como `/usr/bin/php83`, `/usr/sbin/php-fpm83` e `/etc/php83/`. Para montar diretórios inteiros de configuração nas imagens APK, prefira os caminhos nativos da série.
-- PHP 8.2 usa `php.ini-production`; PHP 8.3–8.5 usam o INI da distribuição, com os mesmos ajustes compartilhados de segurança, memória e OPcache deste repositório. Instale extensões APK apenas da série correspondente nas imagens APK. Não instale `php82-*` na imagem 8.2 oficial: isso introduziria outro runtime e componentes antigos.
+- PHP 8.2 usa `php.ini-production`; PHP 8.3–8.6 usam o INI da distribuição, com os mesmos ajustes compartilhados de segurança, memória e OPcache deste repositório. Instale extensões APK apenas da série correspondente nas imagens APK. Não instale `php82-*` na imagem 8.2 oficial: isso introduziria outro runtime e componentes antigos.
 - Nginx e FPM conversam por `127.0.0.1:9000`. O healthcheck espera `pong` em `/fpm-ping`. O Supervisor gerencia os processos diretamente e permite desligamento gracioso.
 - O cache só armazena respostas com prazo explícito informado pela aplicação (`Cache-Control`, `Expires` ou `X-Accel-Expires`). O cache automático de uma hora foi removido. `private`, `no-store`, `Set-Cookie` e `Vary` são respeitados; requisições com cookies ou `Authorization` não usam nem alimentam o cache. GET e HEAD compartilham a mesma chave. O cache lock fica desativado na configuração genérica: ele também retinha requisições `no-store` por até 5 s. Use bloqueio de preenchimento apenas em locations específicas que sejam efetivamente cacheáveis.
 - As alterações nos arquivos só chegam ao Docker Hub depois da publicação bem-sucedida. Em cada ambiente consumidor, faça pull e **recrie os contêineres**; reiniciar um contêiner existente não atualiza PHP. Confira `php -v` no contêiner novo.
 
 PHP 8.0/8.1 e as bases Nginx Alpine 3.16/3.19 continuam como legado e não recebem a garantia de correção descrita acima. [PHP 8.2 encerra o suporte de segurança em 31/12/2026](https://www.php.net/supported-versions.php); planeje a migração dos consumidores.
 
-## Segurança e recursos em PHP 8.2–8.5
+## Segurança e recursos em PHP 8.2–8.6
 
 A base usa um worker Nginx, um worker FPM e OPcache compartilhado de 64 MiB, sem JIT. O limite PHP continua em 128 MiB **por requisição**, não por contêiner. O cache Nginx usa zona de 8 MiB e até 256 MiB em disco. Esses valores reduzem o risco de excesso de concorrência em contêineres pequenos; extensões nativas, buffers, páginas de cache e outros processos também consomem memória fora do limite PHP.
 
